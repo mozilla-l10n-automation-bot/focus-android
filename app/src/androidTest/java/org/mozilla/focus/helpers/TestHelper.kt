@@ -124,7 +124,7 @@ object TestHelper {
                 mDevice.executeShellCommand("svc wifi disable")
             }
         }
-        mDevice.waitForIdle(waitingTime)
+        Thread.sleep(waitingTime)
     }
 
     // wait for web area to be visible
