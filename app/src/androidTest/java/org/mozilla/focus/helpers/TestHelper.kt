@@ -12,6 +12,7 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -30,6 +31,7 @@ import org.hamcrest.Matchers.allOf
 import org.junit.Assert
 import org.junit.Assert.assertTrue
 import org.mozilla.focus.R
+import org.mozilla.focus.idlingResources.NetworkIdlingResources
 import org.mozilla.focus.utils.AppConstants.isKlarBuild
 import java.io.BufferedReader
 import java.io.File
@@ -113,18 +115,31 @@ object TestHelper {
     }
 
     fun setNetworkEnabled(enabled: Boolean) {
+        val networkDisconnectedIdlingResource = NetworkIdlingResources(false)
+        val networkConnectedIdlingResource = NetworkIdlingResources(true)
         when (enabled) {
             true -> {
                 mDevice.executeShellCommand("svc data enable")
                 mDevice.executeShellCommand("svc wifi enable")
+
+                // Wait for network connection to be completely enabled
+                IdlingRegistry.getInstance().register(networkConnectedIdlingResource)
+                Espresso.onIdle {
+                    IdlingRegistry.getInstance().unregister(networkConnectedIdlingResource)
+                }
             }
 
             false -> {
                 mDevice.executeShellCommand("svc data disable")
                 mDevice.executeShellCommand("svc wifi disable")
+
+                // Wait for network connection to be completely disabled
+                IdlingRegistry.getInstance().register(networkDisconnectedIdlingResource)
+                Espresso.onIdle {
+                    IdlingRegistry.getInstance().unregister(networkDisconnectedIdlingResource)
+                }
             }
         }
-        Thread.sleep(waitingTime)
     }
 
     // wait for web area to be visible
